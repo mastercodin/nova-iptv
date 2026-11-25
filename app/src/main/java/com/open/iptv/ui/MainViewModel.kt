@@ -1,6 +1,7 @@
 package com.open.iptv.ui
 
 import android.app.Application
+import androidx.media3.common.PlaybackParameters
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.open.iptv.data.AppSettings
@@ -12,6 +13,7 @@ import com.open.iptv.domain.model.Program
 import com.open.iptv.player.PlayerController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -56,6 +58,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isReady = MutableStateFlow(false)
     val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
+    private val _playbackSpeed = MutableStateFlow(1f)
+    val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
+
+    private val _aspectMode = MutableStateFlow(0)
+    val aspectMode: StateFlow<Int> = _aspectMode.asStateFlow()
+
+    private val _sleepLabel = MutableStateFlow<String?>(null)
+    val sleepLabel: StateFlow<String?> = _sleepLabel.asStateFlow()
+
+    private var sleepJob: kotlinx.coroutines.Job? = null
 
     val player = playerController.player
 
@@ -184,6 +197,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleCurrentFavorite() {
         _selectedChannel.value?.let { toggleFavorite(it.id) }
+    }
+
+    fun setPlaybackSpeed(speed: Float) {
+        _playbackSpeed.value = speed
+        player.playbackParameters = PlaybackParameters(speed)
+    }
+
+    fun cycleAspectMode() {
+        _aspectMode.value = (_aspectMode.value + 1) % 3
+    }
+
+    fun seekBy(deltaMs: Long) {
+        val target = player.currentPosition + deltaMs
+        player.seekTo(
+            if (player.duration > 0) target.coerceIn(0L, player.duration) else target.coerceAtLeast(0L)
+        )
+    }
+
+    fun setSleepTimer(minutes: Int) {
+        sleepJob?.cancel()
+        if (minutes <= 0) {
+            _sleepLabel.value = null
+            return
+        }
+        _sleepLabel.value = "Sleep in ${minutes}m"
+        sleepJob = viewModelScope.launch {
+            delay(minutes * 60_000L)
+            player.pause()
+            _sleepLabel.value = null
+            _status.value = "Sleep timer finished"
+        }
     }
 
     fun saveSettings(playlistUrl: String, epgUrl: String, useDefaultEpg: Boolean) {

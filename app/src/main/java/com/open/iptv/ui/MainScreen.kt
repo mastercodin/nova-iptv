@@ -102,10 +102,14 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val recordings by viewModel.recordings.collectAsStateWithLifecycle()
     val recentIds by viewModel.recentChannelIds.collectAsStateWithLifecycle()
+    val playbackSpeed by viewModel.playbackSpeed.collectAsStateWithLifecycle()
+    val aspectMode by viewModel.aspectMode.collectAsStateWithLifecycle()
+    val sleepLabel by viewModel.sleepLabel.collectAsStateWithLifecycle()
 
     var destination by rememberSaveable { mutableIntStateOf(0) }
     var showPlaylistDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showPlayerSettings by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val openPlaylist = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -208,7 +212,8 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                                 slideOutHorizontally { width -> -(width * 0.06f).toInt() })
                         },
                     ) { target ->
-                        when (target) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            when (target) {
                             2 -> GuideScreen(
                             programs = programs,
                             recordings = recordings,
@@ -310,6 +315,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     }
                     }
                     }
+                    }
                 }
 
                 selectedChannel?.let { channel ->
@@ -321,7 +327,12 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                         onPrevious = { viewModel.playRelative(-1) },
                         onNext = { viewModel.playRelative(1) },
                         onToggleFavorite = viewModel::toggleCurrentFavorite,
+                        onSeekBy = viewModel::seekBy,
+                        onShowSettings = { showPlayerSettings = true },
+                        onCycleAspect = viewModel::cycleAspectMode,
                         isFavorite = channel.id in favorites,
+                        aspectMode = aspectMode,
+                        sleepLabel = sleepLabel,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -361,6 +372,17 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 }
                 showSettingsDialog = false
             },
+        )
+    }
+
+    if (showPlayerSettings && selectedChannel != null) {
+        PlayerSettingsSheet(
+            player = viewModel.player,
+            speed = playbackSpeed,
+            sleepLabel = sleepLabel,
+            onDismiss = { showPlayerSettings = false },
+            onSpeed = viewModel::setPlaybackSpeed,
+            onSleep = viewModel::setSleepTimer,
         )
     }
 }
