@@ -10,3 +10,8 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# R8 can break OkHttp's internal Kotlin access after aggressive rewriting.
+-keep class okhttp3.** { *; }
+-keep class kotlin.text.** { *; }
+-keep class com.open.iptv.** { *; }
