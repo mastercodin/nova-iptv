@@ -5,6 +5,20 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -184,8 +198,18 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                         .fillMaxSize()
                         .padding(innerPadding),
                 ) {
-                    when (destination) {
-                        2 -> GuideScreen(
+                    AnimatedContent(
+                        targetState = destination,
+                        label = "screen_transition",
+                        transitionSpec = {
+                            (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)) +
+                                slideInHorizontally { width -> (width * 0.06f).toInt() }) togetherWith
+                                (fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)) +
+                                slideOutHorizontally { width -> -(width * 0.06f).toInt() })
+                        },
+                    ) { target ->
+                        when (target) {
+                            2 -> GuideScreen(
                             programs = programs,
                             recordings = recordings,
                             onToggleRecording = viewModel::toggleRecording,
@@ -282,6 +306,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                                 }
                             }
                         }
+                    }
                     }
                     }
                     }

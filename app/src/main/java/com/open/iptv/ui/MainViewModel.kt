@@ -54,6 +54,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _recentChannelIds = MutableStateFlow<List<String>>(emptyList())
     val recentChannelIds: StateFlow<List<String>> = _recentChannelIds.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+    val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     val player = playerController.player
 
     init {
@@ -86,6 +89,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             settingsRepository.recentChannels.collect { _recentChannelIds.value = it }
         }
+        _isReady.value = true
     }
 
     fun updateQuery(value: String) {
